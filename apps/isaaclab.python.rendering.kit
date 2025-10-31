@@ -17,6 +17,7 @@ keywords = ["experience", "app", "isaaclab", "python", "camera", "minimal"]
 [dependencies]
 # Isaac Lab minimal app
 "isaaclab.python" = {}
+"isaacsim.sensors.rtx" = {}
 
 # PhysX
 "omni.kit.property.physx" = {}
@@ -91,6 +92,10 @@ exts."omni.replicator.core".Orchestrator.enabled = false
 
 # disable the metrics assembler change listener, we don't want to do any runtime changes
 metricsAssembler.changeListenerEnabled = false
+# move the default lidar config file paths
+app.sensors.nv.lidar.profileBaseFolder.'++' = [
+    "${app}/../source/isaaclab/isaaclab/sensors/rtx_lidar/",
+]
 
 [settings.physics]
 updateToUsd = false
