@@ -78,7 +78,7 @@ class RtxLidar(SensorBase):
         if len(matching_prims) == 0:
             raise RuntimeError(f"Could not find prim with path {self.cfg.prim_path}.")
 
-        self._sensor_prims: list[UsdGeom.Camera] = list()
+        self._sensor_prims: list[UsdGeom.Camera] = list() # TODO: Change to OmniLidar or prim
         # Create empty variables for storing output data
         self._data = RtxLidarData()
 
@@ -161,6 +161,7 @@ class RtxLidar(SensorBase):
             RuntimeError: If the number of camera prims in the view does not match the number of environments.
             RuntimeError: If the provided USD prim is not a Camera.
         """
+        # TODO: Check if enable_cameres still needed
         carb_settings_iface = carb.settings.get_settings()
         if not carb_settings_iface.get("/isaaclab/cameras_enabled"):
             raise RuntimeError(
@@ -197,9 +198,12 @@ class RtxLidar(SensorBase):
         for lidar_prim_path in self._view.prim_paths:
             # Get lidar prim
             lidar_prim = stage.GetPrimAtPath(lidar_prim_path)
+            # Is this necessary?
             # Check if prim is a camera
-            if not lidar_prim.IsA(UsdGeom.Camera):
-                raise RuntimeError(f"Prim at path '{lidar_prim_path}' is not a Camera.")
+            # if not lidar_prim.IsA(UsdGeom.Camera):
+            #     raise RuntimeError(f"Prim at path '{lidar_prim_path}' is not a Camera.")
+
+            # This is not use in any other situation, maybe remove it
             # Add to list
             sensor_prim = UsdGeom.Camera(lidar_prim)
             self._sensor_prims.append(sensor_prim)
@@ -217,7 +221,7 @@ class RtxLidar(SensorBase):
             }
 
             # create annotator node
-            annotator_type = "RtxSensorCpuIsaacCreateRTXLidarScanBuffer"
+            annotator_type = "IsaacCreateRTXLidarScanBuffer"
             rep_annotator = rep.AnnotatorRegistry.get_annotator(annotator_type)
             # turn on any optional data type returns
             for name in self.cfg.optional_data_types:
@@ -246,7 +250,12 @@ class RtxLidar(SensorBase):
 
             # Get render product
             # From Isaac Sim 2023.1 onwards, render product is a HydraTexture so we need to extract the path
-            render_prod_path = rep.create.render_product(lidar_prim_path, [1, 1])
+            render_prod_path = rep.create.render_product(
+                lidar_prim_path,
+                [32, 32],
+                name="RtxSensorRenderProduct",
+                render_vars=["GenericModelOutput", "RtxSensorMetadata"]
+            )
             if not isinstance(render_prod_path, str):
                 render_prod_path = render_prod_path.path
             self._render_product_paths.append(render_prod_path)
@@ -308,6 +317,9 @@ class RtxLidar(SensorBase):
 
             for key in info_data_all_lidar:
                 self._data.output[key] = torch.stack(info_data_all_lidar[key], dim=0)
+       
+        # Printing lidar data of env_0
+        print(self._rep_registry[0].get_data())
 
     def _process_annotator_output(self, name: str, output: Any) -> tuple[torch.tensor, dict | None]:
         """Process the annotator output.

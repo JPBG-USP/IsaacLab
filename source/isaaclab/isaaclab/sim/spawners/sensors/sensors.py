@@ -214,6 +214,9 @@ def spawn_lidar(
             config=config,
             translation=translation,
             orientation=Gf.Quatd(orientation[0], orientation[1], orientation[2], orientation[3]),
+            visiblity=True,
+            variant=None,
+            force_camera_prim=False,
         )
         if not sensor.IsValid():
             raise RuntimeError("IsaacSensorCreateRtxLidar failed to create a USD.Prim")
